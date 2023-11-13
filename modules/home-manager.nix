@@ -1,20 +1,13 @@
 { config, lib, pkgs, ... }@args:
 let
-  cfg = config.services.flatpak;
+  cfg = config.services.nix-flatpak;
   installation = "user";
 in
 {
 
-  options.services.flatpak = (import ./options.nix { inherit cfg lib pkgs; })
-  // {
-    enable = with lib; mkOption {
-      type = types.bool;
-      default = args.osConfig.services.flatpak.enable or false;
-      description = mkDoc "Whether to enable nix-flatpak declarative flatpak management in home-manager.";
-    };
-  };
+  options.services.nix-flatpak = (import ./options.nix args);
 
-  config = lib.mkIf (config.services.flatpak.enable) {
+  config = lib.mkIf (cfg.enable) {
     systemd.user.services."flatpak-managed-install" = {
       Unit = {
         After = [
@@ -32,11 +25,11 @@ in
       };
     };
 
-    systemd.user.timers."flatpak-managed-install" = lib.mkIf config.services.flatpak.update.auto.enable {
+    systemd.user.timers."flatpak-managed-install" = lib.mkIf cfg.update.auto.enable {
       Unit.Description = "flatpak update schedule";
       Timer = {
         Unit = "flatpak-managed-install";
-        OnCalendar = "${config.services.flatpak.update.auto.onCalendar}";
+        OnCalendar = "${cfg.update.auto.onCalendar}";
         Persistent = "true";
       };
       Install.WantedBy = [ "timers.target" ];

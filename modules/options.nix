@@ -1,9 +1,7 @@
-{ cfg, lib, pkgs, ... }:
+{ lib, osConfig ? { } }:
 with lib;
 let
-  cfg = config.services.flatpak;
-
-  remoteOptions = { cfg, ... }: {
+  remoteOptions = {
     options = {
       name = mkOption {
         type = types.str;
@@ -24,7 +22,7 @@ let
     };
   };
 
-  packageOptions = { cfg, ... }: {
+  packageOptions = {
     options = {
       appId = mkOption {
         type = types.str;
@@ -45,7 +43,7 @@ let
     };
   };
 
-  updateOptions = { cfg, ... }: {
+  updateOptions = {
     options = {
       onActivation = mkOption {
         type = types.bool;
@@ -59,7 +57,7 @@ let
         '';
       };
       auto = mkOption {
-        type = with types; submodule ({ cfg, ... }: {
+        type = with types; submodule ({
           options = {
             enable = mkOption {
               type = types.bool;
@@ -91,7 +89,13 @@ let
 
 
 in
-{
+{   
+  enable = with lib; mkOption {
+      type = types.bool;
+      default = osConfig.services.flatpak.enable or false;
+      description = mkDoc "Whether to enable nix-flatpak declarative flatpak management in home-manager.";
+  };
+
   packages = mkOption {
     type = with types; listOf (coercedTo str (appId: { inherit appId; }) (submodule packageOptions));
     default = [ ];

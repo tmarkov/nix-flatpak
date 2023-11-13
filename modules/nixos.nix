@@ -1,12 +1,16 @@
 { config, lib, pkgs, ... }:
 let
-  cfg = config.services.flatpak;
+  cfg = config.services.flatpak.nix-flatpak;
   installation = "system";
 in
 {
-  options.services.flatpak = import ./options.nix { inherit cfg lib pkgs; };
+  options.services.flatpak.nix-flatpak = import ./options.nix { inherit cfg lib pkgs; };
 
-  config = lib.mkIf config.services.flatpak.enable {
+  config = lib.mkIf cfg.enable {
+    asserttions = [{
+      assertion = config.services.flatpak.enable;
+      text = "services.flatpak.enable must be true when enabling nix-flatpak";
+    }];
     systemd.services."flatpak-managed-install" = {
       wants = [
         "network-online.target"
@@ -19,10 +23,10 @@ in
         ExecStart = "${import ./installer.nix {inherit cfg pkgs lib; installation = installation; }}";
       };
     };
-    systemd.timers."flatpak-managed-install" = lib.mkIf config.services.flatpak.update.auto.enable {
+    systemd.timers."flatpak-managed-install" = lib.mkIf cfg.update.auto.enable {
       timerConfig = {
         Unit = "flatpak-managed-install";
-        OnCalendar = "${config.services.flatpak.update.auto.onCalendar}";
+        OnCalendar = "${cfg.update.auto.onCalendar}";
         Persistent = "true";
       };
       wantedBy = [ "timers.target" ];
